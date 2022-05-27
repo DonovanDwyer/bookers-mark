@@ -1,0 +1,20 @@
+{
+    "name": "Booker's Mark",
+    "description": "An extension for Chrome that makes a thing out of browsing by way of bookmarks",
+    "version": "1.0",
+    "manifest_version": 3,
+    "permissions": [
+        "bookmarks",
+        "tabs"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "web_accessible_resources": [{
+        "resources" : ["popup.html"],
+        "matches": ["<all_urls>"]
+    }]
+}
