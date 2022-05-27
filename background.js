@@ -1,40 +1,97 @@
-const openBkMkInNewTab = async () => {
-    // const children = await chrome.bookmarks.getSubTree("1555");
-    // await chrome.tabs.create({
-    //     active: true,
-    //     url: children[0].children[0].url
-    // });
-    // let x = children[0].children[0].id;
-    // console.log(x);
-    // console.log(await chrome.bookmarks.getTree());
-    // await chrome.bookmarks.remove(x);
+const targetFolder = async () => {
+    let x = await chrome.bookmarks.getTree();
+    function recursiveLookup(tree, acc){
+        let arr = acc;
+        for (const item of tree){
+            if (item.children) {
+                arr.push(item);
+                recursiveLookup(item.children, arr);
+            }
+        }
+        return arr;
+    }
+    return recursiveLookup(x, []);
 }
 
 const openNextBookMark = async () => {
-    let tree = await chrome.bookmarks.getSubTree("674");
+    // console.log(await chrome.bookmarks.getTree());
+    let tree = await chrome.bookmarks.getSubTree("707");
     tree = tree[0].children;
-    let length = tree.length - 1;
-    let bookmark = tree.shift();
-    console.log(length, bookmark, tree);
-    // folders have children, bookmarks do not
-    if (bookmark.children){
-        bookmark = bookmark.children.shift();
-        console.log('hit a folder');
+
+    let bookmarks = [];
+    
+    const recursiveLookup = (elem, acc) => {
+        console.log(elem, acc);
+        let arr = acc;
+        for (let i = 0; i < elem.length; i++){
+            if (!elem[i].children) {
+                arr.push(elem[i]);
+            } else {
+                recursiveLookup(elem[i].children, arr);
+            }
+        }
+        return arr;
     }
+    bookmarks = recursiveLookup(tree, bookmarks);
+
+    let bookmark = bookmarks.shift();
     await chrome.tabs.create({
         active: true,
         url: bookmark.url
     });
-    // console.log(x);
-    // console.log(await chrome.bookmarks.getTree());
-    // await chrome.bookmarks.remove(x);
+    await chrome.bookmarks.remove(bookmark.id);
 }
+
+const openRandoBookMark = async () => {
+    // console.log(await chrome.bookmarks.getTree());
+    let tree = await chrome.bookmarks.getSubTree("707");
+    tree = tree[0].children;
+
+    let bookmarks = [];
+    
+    const recursiveLookup = (elem, acc) => {
+        console.log(elem, acc);
+        let arr = acc;
+        for (let i = 0; i < elem.length; i++){
+            if (!elem[i].children) {
+                arr.push(elem[i]);
+            } else {
+                recursiveLookup(elem[i].children, arr);
+            }
+        }
+        return arr;
+    }
+    bookmarks = recursiveLookup(tree, bookmarks);
+
+    let length = bookmarks.length - 1;
+    let bookmark = bookmarks[getRandomInt(0, length)];
+    await chrome.tabs.create({
+        active: true,
+        url: bookmark.url
+    });
+    await chrome.bookmarks.remove(bookmark.id);
+}
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message == 'get-bookmark') {
         openNextBookMark();
         sendResponse('Bookmark Get');
     } else if (message == 'get-rando'){
+        openRandoBookMark();
         sendResponse('Rando Get');
+    }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message == 'update-cache'){
+        targetFolder().then(sendResponse);
+        return true;
     }
 })
